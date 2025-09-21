@@ -1,0 +1,41 @@
+import requests
+import pandas as pd
+import chains.utils as utils
+
+class Injective:
+    URL = 'https://lcd.injective.network/cosmos/base/tendermint/v1beta1/validatorsets/latest'
+    
+    @classmethod
+    def get_validators(cls):
+        print('Lấy dữ liệu cho Injective Protocol')
+        response = requests.get(cls.URL)
+        
+        if response.status_code == 200:
+            data = response.json()
+            validators = data.get('validators', [])
+
+            # Xử lý dữ liệu của từng validator
+            validator_info_list = [
+                {
+                    'address': validator.get('address', None),
+                    'tokens': int(validator.get('voting_power', 0))
+                }
+                for validator in validators
+            ]
+
+            # Tạo DataFrame
+            df = pd.DataFrame(validator_info_list)
+
+            # Sắp xếp DataFrame theo voting_power
+            sorted_df = df.sort_values(by='tokens', ascending=False)
+
+            # Lưu dữ liệu vào file CSV
+            utils.write_csv(sorted_df, 'injective')
+            return sorted_df
+        else:
+            print(f'Không thể lấy dữ liệu: {response.status_code}')
+            return None
+
+if __name__ == '__main__':
+    validator_dataframe = Injective.get_validators()
+    print(validator_dataframe)
